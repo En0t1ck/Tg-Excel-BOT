@@ -1,0 +1,557 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Облік</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+  :root{
+    --bg: #f4f5f7;
+    --surface: #ffffff;
+    --surface-2: #f0f1f4;
+    --border: #e6e8ec;
+    --text: #12151a;
+    --text-dim: #8a8f98;
+    --accent: #3d7fff;
+    --accent-soft: rgba(61,127,255,0.10);
+    --positive: #2fae66;
+    --positive-soft: rgba(47,174,102,0.12);
+    --negative: #e0553f;
+    --negative-soft: rgba(224,85,63,0.12);
+    --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --mono: 'SF Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  html,body{ margin:0; padding:0; }
+  body{
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height:100vh;
+    padding-bottom: calc(78px + var(--safe-bottom));
+    overscroll-behavior-y: none;
+  }
+  .wrap{ max-width: 520px; margin: 0 auto; padding: 16px 16px 8px; }
+
+  header.top{ margin-bottom: 16px; padding-top: 4px; }
+  header.top h1{
+    font-weight: 700;
+    font-size: 22px;
+    margin: 0 0 2px;
+    letter-spacing: -0.3px;
+  }
+  header.top p{
+    color: var(--text-dim);
+    font-size: 13px;
+    margin: 0;
+  }
+
+  .balance-card{
+    background: linear-gradient(135deg, var(--accent) 0%, #2e63d1 100%);
+    border-radius: 20px;
+    padding: 22px 20px;
+    color: #fff;
+    margin-bottom: 16px;
+    position: relative;
+    overflow: hidden;
+  }
+  .balance-card .label{
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    opacity: 0.75;
+    margin-bottom: 6px;
+  }
+  .balance-card .amount{
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    line-height: 1.1;
+    margin-bottom: 14px;
+  }
+  .balance-card .sub{
+    display:flex;
+    gap: 18px;
+  }
+  .balance-card .sub div{ font-size: 12px; opacity: 0.9; }
+  .balance-card .sub .v{ font-family: var(--mono); font-weight:600; display:block; font-size:14px; margin-top:2px;}
+
+  .curr-toggle{
+    display:flex; gap:6px; margin-top:14px;
+  }
+  .curr-toggle button{
+    appearance:none; border:1px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.12);
+    color: #fff; border-radius:20px; padding: 5px 12px; font-size:12px; cursor:pointer;
+    font-family: var(--sans); font-weight:600;
+  }
+  .curr-toggle button.on{ background: #fff; color: var(--accent); border-color: #fff; }
+
+  .card{
+    background: var(--surface);
+    border-radius: 18px;
+    padding: 16px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 1px 12px rgba(20,20,30,0.03);
+  }
+  .card h2{
+    font-weight: 700;
+    font-size: 15px;
+    margin: 0 0 12px;
+  }
+  .card .hint{
+    font-size: 11.5px;
+    color: var(--text-dim);
+    margin: -6px 0 12px;
+    line-height:1.4;
+  }
+
+  form.entry{ display:grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  form.entry .full{ grid-column: 1 / -1; }
+  .seg{ display:flex; background: var(--surface-2); border-radius: 10px; padding: 3px; }
+  .seg button{
+    flex:1; appearance:none; border:none; background: transparent; color: var(--text-dim);
+    padding: 8px 0; font-size: 13px; font-weight:600; cursor:pointer; border-radius:8px;
+    font-family: var(--sans); transition: background .15s, color .15s;
+  }
+  .seg button.on.income{ background: var(--positive-soft); color: var(--positive); }
+  .seg button.on.expense{ background: var(--negative-soft); color: var(--negative); }
+
+  input, select{
+    width:100%; background: var(--surface-2); border: 1px solid transparent; color: var(--text);
+    border-radius: 10px; padding: 10px 12px; font-size: 14px; font-family: var(--sans);
+  }
+  input::placeholder{ color: var(--text-dim); }
+  input:focus, select:focus{ outline:none; border-color: var(--accent); background: var(--surface); }
+
+  .btn-add{
+    grid-column: 1 / -1; appearance:none; border:none; background: var(--accent); color: #fff;
+    font-weight: 700; padding: 12px 0; border-radius: 12px; cursor:pointer; font-size: 14px;
+    font-family: var(--sans);
+  }
+  .btn-add:active{ opacity: 0.85; }
+  .btn-secondary{
+    grid-column: 1 / -1; appearance:none; border: none; background: var(--surface-2); color: var(--text);
+    padding: 10px 0; border-radius: 10px; cursor:pointer; font-size: 13px; font-weight:600; font-family: var(--sans);
+  }
+
+  ul.ledger{ list-style:none; margin:0; padding:0; }
+  ul.ledger li{
+    display:flex; align-items:center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border);
+  }
+  ul.ledger li:last-child{ border-bottom:none; }
+  .icon-badge{
+    width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center;
+    font-size: 18px; flex-shrink:0;
+  }
+  .icon-badge.income{ background: var(--positive-soft); }
+  .icon-badge.expense{ background: var(--negative-soft); }
+  .lg-mid{ flex:1; min-width:0; }
+  .lg-cat{ font-size: 14px; font-weight:600; }
+  .lg-date{ color: var(--text-dim); font-size: 11.5px; }
+  .lg-note{ color: var(--text-dim); font-size: 11.5px; display:block; }
+  .lg-amt{ font-family: var(--mono); font-weight:700; font-size:14px; white-space:nowrap; }
+  .lg-del{
+    appearance:none; border:none; background:none; color: var(--text-dim);
+    cursor:pointer; font-size: 16px; padding: 4px; flex-shrink:0;
+  }
+
+  .empty{ color: var(--text-dim); font-size: 13px; text-align:center; padding: 20px 0; }
+
+  .cat-bars{ margin-top: 2px; }
+  .cat-bar-row{ margin-bottom:10px; }
+  .cat-bar-row .top-line{ display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px; font-weight:500;}
+  .cat-bar-row .top-line .amt{ font-family: var(--mono); color: var(--text-dim); font-weight:400;}
+  .bar-track{ height:6px; background: var(--surface-2); border-radius:4px; overflow:hidden; }
+  .bar-fill{ height:100%; background: var(--accent); border-radius:4px; }
+
+  .acct-row{
+    display:flex; align-items:center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border);
+  }
+  .acct-row:last-child{ border-bottom:none; }
+  .acct-icon{
+    width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:18px; background: var(--accent-soft); flex-shrink:0;
+  }
+  .acct-mid{ flex:1; min-width:0; }
+  .acct-name{ font-size:14px; font-weight:600; }
+  .acct-orig{ font-size: 11.5px; color: var(--text-dim); margin-top:1px; }
+  .acct-right{ text-align:right; flex-shrink:0; }
+  .acct-bal{ font-family: var(--mono); font-size:14px; font-weight:700; }
+  .acct-tag{
+    display:inline-block; font-size:9.5px; text-transform:uppercase; letter-spacing:.4px;
+    background: var(--surface-2); border-radius:4px; padding: 1px 5px; margin-left:6px; color: var(--text-dim);
+    font-weight:600;
+  }
+
+  .rates-grid{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; }
+  .rates-grid label{ font-size:10.5px; color: var(--text-dim); display:block; margin-bottom:4px; font-weight:600;}
+
+  .toast{
+    position: fixed; bottom: calc(90px + var(--safe-bottom)); left: 50%; transform: translateX(-50%);
+    background: #1c1f26; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px;
+    opacity:0; pointer-events:none; transition: opacity .25s ease; font-weight:600;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+  }
+  .toast.show{ opacity:1; }
+
+  nav.tabbar{
+    position: fixed; bottom:0; left:0; right:0;
+    background: var(--surface);
+    border-top: 1px solid var(--border);
+    display:flex;
+    padding-bottom: var(--safe-bottom);
+    z-index: 10;
+  }
+  nav.tabbar button{
+    flex:1; appearance:none; border:none; background:transparent; cursor:pointer;
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    padding: 10px 0 8px; color: var(--text-dim); font-family: var(--sans);
+  }
+  nav.tabbar button .ic{ font-size: 20px; line-height:1; }
+  nav.tabbar button .tl{ font-size: 10.5px; font-weight:600; }
+  nav.tabbar button.active{ color: var(--accent); }
+
+  @media (max-width: 380px){
+    .rates-grid{ grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <h1>Облік</h1>
+    <p>Особисті фінанси та накопичення</p>
+  </header>
+  <div id="view"></div>
+</div>
+
+<nav class="tabbar">
+  <button data-tab="personal" class="active">
+    <span class="ic">💳</span><span class="tl">Особисте</span>
+  </button>
+  <button data-tab="savings">
+    <span class="ic">💰</span><span class="tl">Накопичення</span>
+  </button>
+</nav>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ---------- Telegram integration ----------
+const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
+if(tg){
+  tg.ready();
+  tg.expand();
+  try{
+    const tp = tg.themeParams || {};
+    const root = document.documentElement.style;
+    if(tp.bg_color) root.setProperty('--bg', tp.bg_color);
+    if(tp.secondary_bg_color) root.setProperty('--surface-2', tp.secondary_bg_color);
+    if(tp.text_color) root.setProperty('--text', tp.text_color);
+    if(tp.hint_color) root.setProperty('--text-dim', tp.hint_color);
+    if(tp.button_color) root.setProperty('--accent', tp.button_color);
+    if(tg.colorScheme === 'dark'){
+      root.setProperty('--surface', tp.section_bg_color || '#1c1f26');
+      root.setProperty('--border', 'rgba(255,255,255,0.08)');
+    }
+    tg.setHeaderColor(tg.colorScheme === 'dark' ? '#1c1f26' : '#ffffff');
+  }catch(e){}
+}
+function haptic(kind){
+  if(tg && tg.HapticFeedback){
+    try{
+      if(kind==='light') tg.HapticFeedback.impactOccurred('light');
+      else if(kind==='success') tg.HapticFeedback.notificationOccurred('success');
+    }catch(e){}
+  }
+}
+
+// ---------- Storage: Telegram CloudStorage with localStorage fallback ----------
+const Store = {
+  get(key){
+    return new Promise((resolve)=>{
+      if(tg && tg.CloudStorage){
+        tg.CloudStorage.getItem(key, (err, value)=> resolve(err ? null : value));
+      } else {
+        resolve(localStorage.getItem(key));
+      }
+    });
+  },
+  set(key, value){
+    return new Promise((resolve)=>{
+      if(tg && tg.CloudStorage){
+        tg.CloudStorage.setItem(key, value, ()=> resolve(true));
+      } else {
+        localStorage.setItem(key, value);
+        resolve(true);
+      }
+    });
+  }
+};
+
+// ---------- App ----------
+const CUR_SYMBOLS = { UAH:'₴', EUR:'€', USD:'$', BTC:'₿' };
+const CAT_ICONS = {
+  'Зарплата':'💼','Фріланс':'💻','Подарунок':'🎁',
+  'Продукти':'🛒','Транспорт':'🚌','Комунальні послуги':'🏠','Розваги':'🎉','Здоровʼя':'💊',
+  'Інше':'📎'
+};
+
+const fmtPlain = (n) => (Number(n)||0).toLocaleString('uk-UA', {minimumFractionDigits:0, maximumFractionDigits:2});
+const fmt = (n) => fmtPlain(n) + ' ₴';
+const fmtCur = (n, cur) => {
+  const v = Number(n)||0;
+  const digits = cur === 'BTC' ? 6 : 2;
+  return v.toLocaleString('uk-UA', {minimumFractionDigits:0, maximumFractionDigits: digits}) + ' ' + CUR_SYMBOLS[cur];
+};
+const uid = () => Math.random().toString(36).slice(2,10);
+const todayStr = () => new Date().toISOString().slice(0,10);
+
+let state = {
+  personal: [],
+  savings: [],
+  rates: { EUR: 50.9, USD: 44.5, BTC: 2780000 },
+  displayCurrency: 'UAH',
+  tab: 'personal',
+  formType: 'expense'
+};
+
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1500);
+}
+
+async function loadAll(){
+  try{ const p = await Store.get('personal-transactions'); state.personal = p ? JSON.parse(p) : []; }catch(e){ state.personal = []; }
+  try{ const s = await Store.get('savings-accounts'); state.savings = s ? JSON.parse(s) : []; }catch(e){ state.savings = []; }
+  try{ const r = await Store.get('exchange-rates'); if(r) state.rates = JSON.parse(r); }catch(e){}
+  render();
+}
+async function savePersonal(){ await Store.set('personal-transactions', JSON.stringify(state.personal)); }
+async function saveSavings(){ await Store.set('savings-accounts', JSON.stringify(state.savings)); }
+async function saveRates(){ await Store.set('exchange-rates', JSON.stringify(state.rates)); }
+
+const CATS_INCOME = ['Зарплата','Фріланс','Подарунок','Інше'];
+const CATS_EXPENSE = ['Продукти','Транспорт','Комунальні послуги','Розваги','Здоровʼя','Інше'];
+function catOptions(type){
+  return (type==='income'?CATS_INCOME:CATS_EXPENSE).map(c=>`<option value="${c}">${c}</option>`).join('');
+}
+function ledgerTotals(list){
+  const inc = list.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp = list.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  return {inc, exp};
+}
+function categoryBreakdown(list, type){
+  const rows = {};
+  list.filter(t=>t.type===type).forEach(t=>{ rows[t.category] = (rows[t.category]||0) + t.amount; });
+  return Object.entries(rows).sort((a,b)=>b[1]-a[1]);
+}
+function toUAH(amount, currency){ return currency === 'UAH' ? amount : amount * (state.rates[currency] || 0); }
+function fromUAH(amountUAH, currency){ if(currency==='UAH') return amountUAH; return amountUAH / (state.rates[currency] || 1); }
+
+function renderLedgerList(list){
+  if(!list.length) return '<div class="empty">Поки що немає записів.</div>';
+  const sorted = [...list].sort((a,b)=> b.date.localeCompare(a.date));
+  return '<ul class="ledger">' + sorted.map(t=>`
+    <li>
+      <div class="icon-badge ${t.type}">${CAT_ICONS[t.category]||'📎'}</div>
+      <div class="lg-mid">
+        <div class="lg-cat">${t.category}</div>
+        <div class="lg-date">${t.date}${t.note ? ' · '+t.note : ''}</div>
+      </div>
+      <span class="lg-amt" style="color:${t.type==='income'?'var(--positive)':'var(--negative)'}">${t.type==='income'?'+':'−'}${fmt(t.amount)}</span>
+      <button class="lg-del" data-del="${t.id}">✕</button>
+    </li>
+  `).join('') + '</ul>';
+}
+
+function renderPersonal(){
+  const list = state.personal;
+  const {inc, exp} = ledgerTotals(list);
+  const bal = inc - exp;
+  const curType = state.formType;
+  const breakdown = categoryBreakdown(list, 'expense');
+  const maxCat = breakdown.length ? breakdown[0][1] : 1;
+
+  return `
+    <div class="balance-card">
+      <div class="label">Особистий баланс</div>
+      <div class="amount">${fmt(bal)}</div>
+      <div class="sub">
+        <div>Дохід<span class="v">${fmt(inc)}</span></div>
+        <div>Витрати<span class="v">${fmt(exp)}</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Новий запис</h2>
+      <form class="entry" id="form-personal">
+        <div class="seg full">
+          <button type="button" class="type-btn ${curType==='income'?'on income':''}" data-type="income">Дохід</button>
+          <button type="button" class="type-btn ${curType==='expense'?'on expense':''}" data-type="expense">Витрата</button>
+        </div>
+        <select name="category">${catOptions(curType)}</select>
+        <input name="amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Сума, ₴" required>
+        <input name="date" type="date" value="${todayStr()}">
+        <input name="note" type="text" placeholder="Нотатка (необовʼязково)" class="full">
+        <button type="submit" class="btn-add">Додати</button>
+      </form>
+    </div>
+
+    ${breakdown.length ? `
+    <div class="card">
+      <h2>Витрати за категоріями</h2>
+      <div class="cat-bars">
+        ${breakdown.map(([cat,amt])=>`
+          <div class="cat-bar-row">
+            <div class="top-line"><span>${CAT_ICONS[cat]||''} ${cat}</span><span class="amt">${fmt(amt)}</span></div>
+            <div class="bar-track"><div class="bar-fill" style="width:${(amt/maxCat*100).toFixed(0)}%"></div></div>
+          </div>
+        `).join('')}
+      </div>
+    </div>` : ''}
+
+    <div class="card">
+      <h2>Записи</h2>
+      ${renderLedgerList(list)}
+    </div>
+  `;
+}
+
+function renderSavings(){
+  const totalUAH = state.savings.reduce((s,a)=> s + toUAH(Number(a.amount||0), a.currency), 0);
+  const totalDisplay = fromUAH(totalUAH, state.displayCurrency);
+  const maxUAH = state.savings.reduce((m,a)=>Math.max(m, toUAH(Number(a.amount||0), a.currency)), 1) || 1;
+
+  return `
+    <div class="balance-card">
+      <div class="label">Усі накопичення разом</div>
+      <div class="amount">${fmtCur(totalDisplay, state.displayCurrency)}</div>
+      <div class="sub"><div>Рахунків<span class="v">${state.savings.length}</span></div></div>
+      <div class="curr-toggle">
+        ${['UAH','EUR','BTC'].map(c=>`<button class="cur-btn ${state.displayCurrency===c?'on':''}" data-cur="${c}">${CUR_SYMBOLS[c]} ${c}</button>`).join('')}
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Додати рахунок</h2>
+      <form class="entry" id="form-savings">
+        <input name="name" type="text" placeholder="Назва (Крипта, ФІНАМ, Депозит...)" class="full" required>
+        <select name="currency">
+          <option value="UAH">₴ Гривня</option>
+          <option value="EUR">€ Євро</option>
+          <option value="USD">$ Долар</option>
+          <option value="BTC">₿ Bitcoin</option>
+        </select>
+        <input name="amount" type="number" inputmode="decimal" step="0.000001" placeholder="Сума в цій валюті" required>
+        <button type="submit" class="btn-add">Додати рахунок</button>
+      </form>
+    </div>
+
+    <div class="card">
+      <h2>Рахунки</h2>
+      ${state.savings.length ? state.savings.map(a=>{
+        const uah = toUAH(Number(a.amount||0), a.currency);
+        const disp = fromUAH(uah, state.displayCurrency);
+        const icon = a.currency==='BTC' ? '₿' : a.currency==='EUR' ? '€' : a.currency==='USD' ? '$' : '₴';
+        return `
+        <div class="acct-row">
+          <div class="acct-icon">${icon}</div>
+          <div class="acct-mid">
+            <div class="acct-name">${a.name}<span class="acct-tag">${a.currency}</span></div>
+            <div class="acct-orig">${fmtCur(a.amount, a.currency)}</div>
+            <div class="bar-track" style="margin-top:6px;"><div class="bar-fill" style="width:${(uah/maxUAH*100).toFixed(0)}%"></div></div>
+          </div>
+          <div class="acct-right">
+            <div class="acct-bal">${fmtCur(disp, state.displayCurrency)}</div>
+          </div>
+          <button class="lg-del" data-del-acct="${a.id}">✕</button>
+        </div>`;
+      }).join('') : '<div class="empty">Ще немає рахунків.</div>'}
+    </div>
+
+    <div class="card">
+      <h2>Курси валют</h2>
+      <div class="hint">Онови вручну, коли потрібно — курс біткоїна особливо змінюється щодня.</div>
+      <div class="rates-grid">
+        <div><label>1 EUR = ? грн</label><input type="number" step="0.01" id="rate-EUR" value="${state.rates.EUR}"></div>
+        <div><label>1 USD = ? грн</label><input type="number" step="0.01" id="rate-USD" value="${state.rates.USD}"></div>
+        <div><label>1 BTC = ? грн</label><input type="number" step="1" id="rate-BTC" value="${state.rates.BTC}"></div>
+      </div>
+      <button class="btn-secondary" id="save-rates" style="margin-top:10px;">Зберегти курси</button>
+    </div>
+  `;
+}
+
+function render(){
+  document.querySelectorAll('nav.tabbar button').forEach(b=> b.classList.toggle('active', b.dataset.tab === state.tab));
+  const view = document.getElementById('view');
+  view.innerHTML = state.tab === 'personal' ? renderPersonal() : renderSavings();
+  attachHandlers();
+}
+
+function attachHandlers(){
+  document.querySelectorAll('.type-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ haptic('light'); state.formType = btn.dataset.type; render(); });
+  });
+  document.querySelectorAll('.cur-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ haptic('light'); state.displayCurrency = btn.dataset.cur; render(); });
+  });
+
+  const fp = document.getElementById('form-personal');
+  if(fp) fp.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(fp);
+    const entry = { id: uid(), type: state.formType, category: fd.get('category'), amount: parseFloat(fd.get('amount')), date: fd.get('date')||todayStr(), note: fd.get('note')||'' };
+    if(!entry.amount || entry.amount<=0) return;
+    state.personal.push(entry);
+    await savePersonal();
+    haptic('success'); showToast('Запис додано'); render();
+  });
+
+  const fs = document.getElementById('form-savings');
+  if(fs) fs.addEventListener('submit', async (e)=>{
+    e.preventDefault();
+    const fd = new FormData(fs);
+    const acct = { id: uid(), name: fd.get('name'), currency: fd.get('currency'), amount: parseFloat(fd.get('amount')) };
+    if(!acct.name || isNaN(acct.amount)) return;
+    state.savings.push(acct);
+    await saveSavings();
+    haptic('success'); showToast('Рахунок додано'); render();
+  });
+
+  const srb = document.getElementById('save-rates');
+  if(srb) srb.addEventListener('click', async ()=>{
+    state.rates.EUR = parseFloat(document.getElementById('rate-EUR').value) || state.rates.EUR;
+    state.rates.USD = parseFloat(document.getElementById('rate-USD').value) || state.rates.USD;
+    state.rates.BTC = parseFloat(document.getElementById('rate-BTC').value) || state.rates.BTC;
+    await saveRates();
+    haptic('success'); showToast('Курси збережено'); render();
+  });
+
+  document.querySelectorAll('[data-del]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      state.personal = state.personal.filter(t=>t.id!==btn.dataset.del);
+      await savePersonal(); haptic('light'); render();
+    });
+  });
+  document.querySelectorAll('[data-del-acct]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      state.savings = state.savings.filter(a=>a.id!==btn.dataset.delAcct);
+      await saveSavings(); haptic('light'); render();
+    });
+  });
+}
+
+document.querySelectorAll('nav.tabbar button').forEach(b=>{
+  b.addEventListener('click', ()=>{ haptic('light'); state.tab = b.dataset.tab; render(); });
+});
+
+loadAll();
+</script>
+</body>
+</html>
