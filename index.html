@@ -2,7 +2,7 @@
 <html lang="uk">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <title>Облік</title>
 <script src="https://telegram.org/js/telegram-web-app.js"></script>
 <style>
@@ -19,12 +19,14 @@
     --positive-soft: rgba(47,174,102,0.12);
     --negative: #e0553f;
     --negative-soft: rgba(224,85,63,0.12);
+    --warn: #d9a441;
+    --warn-soft: rgba(217,164,65,0.14);
     --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --mono: 'SF Mono', 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
     --safe-bottom: env(safe-area-inset-bottom, 0px);
   }
-  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
-  html,body{ margin:0; padding:0; }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color: transparent; touch-action: manipulation; }
+  html,body{ margin:0; padding:0; touch-action: manipulation; }
   body{
     background: var(--bg);
     color: var(--text);
@@ -32,55 +34,34 @@
     min-height:100vh;
     padding-bottom: calc(78px + var(--safe-bottom));
     overscroll-behavior-y: none;
+    touch-action: manipulation;
+    transition: background .2s ease;
   }
+  body.settings-mode{ background: var(--bg-settings); }
   .wrap{ max-width: 520px; margin: 0 auto; padding: 16px 16px 8px; }
 
-  header.top{ margin-bottom: 16px; padding-top: 4px; }
-  header.top h1{
-    font-weight: 700;
-    font-size: 22px;
-    margin: 0 0 2px;
-    letter-spacing: -0.3px;
+  header.top{ margin-bottom: 16px; padding-top: 4px; display:flex; align-items:flex-start; justify-content:space-between; gap:10px; }
+  header.top .titles h1{ font-weight: 700; font-size: 22px; margin: 0 0 2px; letter-spacing: -0.3px; }
+  header.top .titles p{ color: var(--text-dim); font-size: 13px; margin: 0; }
+  .settings-btn{
+    appearance:none; border:1px solid var(--border); background: var(--surface);
+    color: var(--text-dim); width:38px; height:38px; border-radius:12px; cursor:pointer;
+    font-size:18px; display:flex; align-items:center; justify-content:center; flex-shrink:0;
   }
-  header.top p{
-    color: var(--text-dim);
-    font-size: 13px;
-    margin: 0;
-  }
+  .settings-btn.active{ color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
 
   .balance-card{
     background: linear-gradient(135deg, var(--accent) 0%, #2e63d1 100%);
-    border-radius: 20px;
-    padding: 22px 20px;
-    color: #fff;
-    margin-bottom: 16px;
-    position: relative;
-    overflow: hidden;
+    border-radius: 20px; padding: 22px 20px; color: #fff; margin-bottom: 16px;
+    position: relative; overflow: hidden;
   }
-  .balance-card .label{
-    font-size: 12px;
-    text-transform: uppercase;
-    letter-spacing: 0.6px;
-    opacity: 0.75;
-    margin-bottom: 6px;
-  }
-  .balance-card .amount{
-    font-size: 32px;
-    font-weight: 700;
-    letter-spacing: -0.5px;
-    line-height: 1.1;
-    margin-bottom: 14px;
-  }
-  .balance-card .sub{
-    display:flex;
-    gap: 18px;
-  }
+  .balance-card .label{ font-size: 12px; text-transform: uppercase; letter-spacing: 0.6px; opacity: 0.75; margin-bottom: 6px; }
+  .balance-card .amount{ font-size: 32px; font-weight: 700; letter-spacing: -0.5px; line-height: 1.1; margin-bottom: 14px; }
+  .balance-card .sub{ display:flex; gap: 18px; }
   .balance-card .sub div{ font-size: 12px; opacity: 0.9; }
   .balance-card .sub .v{ font-family: var(--mono); font-weight:600; display:block; font-size:14px; margin-top:2px;}
 
-  .curr-toggle{
-    display:flex; gap:6px; margin-top:14px;
-  }
+  .curr-toggle{ display:flex; gap:6px; margin-top:14px; }
   .curr-toggle button{
     appearance:none; border:1px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.12);
     color: #fff; border-radius:20px; padding: 5px 12px; font-size:12px; cursor:pointer;
@@ -89,26 +70,14 @@
   .curr-toggle button.on{ background: #fff; color: var(--accent); border-color: #fff; }
 
   .card{
-    background: var(--surface);
-    border-radius: 18px;
-    padding: 16px;
-    margin-bottom: 14px;
+    background: var(--surface); border-radius: 18px; padding: 16px; margin-bottom: 14px;
     box-shadow: 0 1px 2px rgba(20,20,30,0.04), 0 1px 12px rgba(20,20,30,0.03);
   }
-  .card h2{
-    font-weight: 700;
-    font-size: 15px;
-    margin: 0 0 12px;
-  }
-  .card .hint{
-    font-size: 11.5px;
-    color: var(--text-dim);
-    margin: -6px 0 12px;
-    line-height:1.4;
-  }
+  .card h2{ font-weight: 700; font-size: 15px; margin: 0 0 12px; display:flex; align-items:center; justify-content:space-between; gap:8px; }
+  .card .hint{ font-size: 11.5px; color: var(--text-dim); margin: -6px 0 12px; line-height:1.4; }
 
-  form.entry{ display:grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  form.entry .full{ grid-column: 1 / -1; }
+  .entry{ display:grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .entry .full{ grid-column: 1 / -1; }
   .seg{ display:flex; background: var(--surface-2); border-radius: 10px; padding: 3px; }
   .seg button{
     flex:1; appearance:none; border:none; background: transparent; color: var(--text-dim);
@@ -117,6 +86,7 @@
   }
   .seg button.on.income{ background: var(--positive-soft); color: var(--positive); }
   .seg button.on.expense{ background: var(--negative-soft); color: var(--negative); }
+  .seg button.on{ background: var(--accent-soft); color: var(--accent); }
 
   input, select{
     width:100%; background: var(--surface-2); border: 1px solid transparent; color: var(--text);
@@ -124,6 +94,9 @@
   }
   input::placeholder{ color: var(--text-dim); }
   input:focus, select:focus{ outline:none; border-color: var(--accent); background: var(--surface); }
+
+  .check-row{ grid-column: 1/-1; display:flex; align-items:center; gap:8px; font-size:13px; color: var(--text-dim); padding: 2px 2px; }
+  .check-row input[type=checkbox]{ width:auto; accent-color: var(--accent); }
 
   .btn-add{
     grid-column: 1 / -1; appearance:none; border:none; background: var(--accent); color: #fff;
@@ -135,11 +108,11 @@
     grid-column: 1 / -1; appearance:none; border: none; background: var(--surface-2); color: var(--text);
     padding: 10px 0; border-radius: 10px; cursor:pointer; font-size: 13px; font-weight:600; font-family: var(--sans);
   }
+  .btn-row{ display:flex; gap:8px; grid-column: 1/-1; }
+  .btn-row > *{ flex:1; grid-column:auto; }
 
   ul.ledger{ list-style:none; margin:0; padding:0; }
-  ul.ledger li{
-    display:flex; align-items:center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border);
-  }
+  ul.ledger li{ display:flex; align-items:center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
   ul.ledger li:last-child{ border-bottom:none; }
   .icon-badge{
     width:38px; height:38px; border-radius:12px; display:flex; align-items:center; justify-content:center;
@@ -152,9 +125,10 @@
   .lg-date{ color: var(--text-dim); font-size: 11.5px; }
   .lg-note{ color: var(--text-dim); font-size: 11.5px; display:block; }
   .lg-amt{ font-family: var(--mono); font-weight:700; font-size:14px; white-space:nowrap; }
-  .lg-del{
+  .lg-actions{ display:flex; gap:2px; flex-shrink:0; }
+  .lg-del, .lg-edit{
     appearance:none; border:none; background:none; color: var(--text-dim);
-    cursor:pointer; font-size: 16px; padding: 4px; flex-shrink:0;
+    cursor:pointer; font-size: 15px; padding: 4px; flex-shrink:0;
   }
 
   .empty{ color: var(--text-dim); font-size: 13px; text-align:center; padding: 20px 0; }
@@ -165,10 +139,10 @@
   .cat-bar-row .top-line .amt{ font-family: var(--mono); color: var(--text-dim); font-weight:400;}
   .bar-track{ height:6px; background: var(--surface-2); border-radius:4px; overflow:hidden; }
   .bar-fill{ height:100%; background: var(--accent); border-radius:4px; }
+  .bar-fill.warn{ background: var(--warn); }
+  .bar-fill.over{ background: var(--negative); }
 
-  .acct-row{
-    display:flex; align-items:center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border);
-  }
+  .acct-row{ display:flex; align-items:center; gap: 12px; padding: 12px 0; border-bottom: 1px solid var(--border); }
   .acct-row:last-child{ border-bottom:none; }
   .acct-icon{
     width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center;
@@ -188,21 +162,58 @@
   .rates-grid{ display:grid; grid-template-columns: 1fr 1fr 1fr; gap:8px; }
   .rates-grid label{ font-size:10.5px; color: var(--text-dim); display:block; margin-bottom:4px; font-weight:600;}
 
+  .preset-row{ display:flex; gap:6px; grid-column: 1 / -1; margin-top:-2px; }
+  .preset-row button{
+    flex:1; appearance:none; border:1px solid var(--border); background: var(--surface-2); color: var(--text);
+    padding: 7px 0; border-radius: 8px; font-size: 12.5px; font-weight:600; cursor:pointer; font-family: var(--sans);
+  }
+  .preset-row button:active{ background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+
+  .chart-labels{ display:flex; justify-content:space-between; margin-top:4px; }
+  .chart-labels span{ font-size:9px; color: var(--text-dim); }
+
+  .goal-card .progress-track{ height:10px; background: var(--surface-2); border-radius:6px; overflow:hidden; margin:10px 0 6px; }
+  .goal-card .progress-fill{ height:100%; background: linear-gradient(90deg, var(--accent), #6aa3ff); border-radius:6px; transition: width .3s ease; }
+  .goal-row{ display:flex; justify-content:space-between; align-items:baseline; font-size:13px; }
+  .goal-row .pct{ font-weight:700; color: var(--accent); }
+  .goal-name{ font-weight:700; font-size:15px; margin-bottom:2px; }
+  .goal-sub{ font-size:11.5px; color: var(--text-dim); }
+  .goal-edit-link{
+    font-size:11.5px; color: var(--text-dim); text-decoration:underline; cursor:pointer;
+    background:none; border:none; padding:0; font-family: var(--sans); margin-top:10px; display:inline-block;
+  }
+
+  .month-compare{ display:flex; gap:10px; }
+  .month-col{ flex:1; background: var(--surface-2); border-radius:12px; padding:12px; }
+  .month-col .mc-label{ font-size:10.5px; color: var(--text-dim); text-transform:uppercase; letter-spacing:.4px; margin-bottom:6px; }
+  .month-col .mc-val{ font-family: var(--mono); font-size:16px; font-weight:700; }
+  .mc-delta{ margin-top:10px; font-size:12px; text-align:center; font-weight:600; }
+  .mc-delta.up{ color: var(--negative); }
+  .mc-delta.down{ color: var(--positive); }
+  .mc-delta.flat{ color: var(--text-dim); }
+
+  .list-row{ display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 0; border-bottom:1px solid var(--border); font-size:13px; }
+  .list-row:last-child{ border-bottom:none; }
+  .list-row .lr-title{ font-weight:600; }
+  .list-row .lr-sub{ color: var(--text-dim); font-size:11.5px; }
+  .list-row input[type=text], .list-row input[type=number]{ padding:6px 8px; font-size:12.5px; }
+
+  .limit-row{ display:flex; align-items:center; gap:10px; padding:8px 0; border-bottom:1px solid var(--border); }
+  .limit-row:last-child{ border-bottom:none; }
+  .limit-row .lr-cat{ flex:1; font-size:13px; }
+  .limit-row input{ width:90px; padding:7px 8px; font-size:12.5px; text-align:right; }
+
   .toast{
     position: fixed; bottom: calc(90px + var(--safe-bottom)); left: 50%; transform: translateX(-50%);
     background: #1c1f26; color: #fff; padding: 10px 18px; border-radius: 10px; font-size: 13px;
     opacity:0; pointer-events:none; transition: opacity .25s ease; font-weight:600;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.2); max-width: 85%; text-align:center;
   }
   .toast.show{ opacity:1; }
 
   nav.tabbar{
-    position: fixed; bottom:0; left:0; right:0;
-    background: var(--surface);
-    border-top: 1px solid var(--border);
-    display:flex;
-    padding-bottom: var(--safe-bottom);
-    z-index: 10;
+    position: fixed; bottom:0; left:0; right:0; background: var(--surface); border-top: 1px solid var(--border);
+    display:flex; padding-bottom: var(--safe-bottom); z-index: 10;
   }
   nav.tabbar button{
     flex:1; appearance:none; border:none; background:transparent; cursor:pointer;
@@ -221,8 +232,11 @@
 <body>
 <div class="wrap">
   <header class="top">
-    <h1>Облік</h1>
-    <p>Особисті фінанси та накопичення</p>
+    <div class="titles">
+      <h1>Облік</h1>
+      <p>Особисті фінанси та накопичення</p>
+    </div>
+    <button class="settings-btn" id="settings-btn" title="Налаштування">⚙️</button>
   </header>
   <div id="view"></div>
 </div>
@@ -239,32 +253,66 @@
 <div class="toast" id="toast"></div>
 
 <script>
+// ---------- Block pinch-zoom / double-tap zoom ----------
+document.addEventListener('gesturestart', (e)=> e.preventDefault());
+let lastTouchEnd = 0;
+document.addEventListener('touchend', (e)=>{
+  const now = Date.now();
+  if(now - lastTouchEnd <= 300) e.preventDefault();
+  lastTouchEnd = now;
+}, { passive:false });
+
 // ---------- Telegram integration ----------
 const tg = window.Telegram && window.Telegram.WebApp ? window.Telegram.WebApp : null;
-if(tg){
-  tg.ready();
-  tg.expand();
-  try{
-    const tp = tg.themeParams || {};
-    const root = document.documentElement.style;
-    if(tp.bg_color) root.setProperty('--bg', tp.bg_color);
-    if(tp.secondary_bg_color) root.setProperty('--surface-2', tp.secondary_bg_color);
-    if(tp.text_color) root.setProperty('--text', tp.text_color);
-    if(tp.hint_color) root.setProperty('--text-dim', tp.hint_color);
-    if(tp.button_color) root.setProperty('--accent', tp.button_color);
-    if(tg.colorScheme === 'dark'){
-      root.setProperty('--surface', tp.section_bg_color || '#1c1f26');
-      root.setProperty('--border', 'rgba(255,255,255,0.08)');
-    }
-    tg.setHeaderColor(tg.colorScheme === 'dark' ? '#1c1f26' : '#ffffff');
-  }catch(e){}
-}
+if(tg){ tg.ready(); tg.expand(); }
 function haptic(kind){
   if(tg && tg.HapticFeedback){
     try{
       if(kind==='light') tg.HapticFeedback.impactOccurred('light');
       else if(kind==='success') tg.HapticFeedback.notificationOccurred('success');
     }catch(e){}
+  }
+}
+function confirmAction(message){
+  return new Promise((resolve)=>{
+    if(tg && tg.showConfirm){
+      try{ tg.showConfirm(message, (ok)=> resolve(!!ok)); return; }catch(e){}
+    }
+    resolve(window.confirm(message));
+  });
+}
+
+// ---------- Theming ----------
+const LIGHT_VARS = { '--bg':'#f4f5f7','--surface':'#ffffff','--surface-2':'#f0f1f4','--border':'#e6e8ec','--text':'#12151a','--text-dim':'#8a8f98','--accent':'#3d7fff','--bg-settings':'#eaf0ff' };
+const DARK_VARS  = { '--bg':'#14171c','--surface':'#1c1f26','--surface-2':'#242832','--border':'rgba(255,255,255,0.08)','--text':'#f2f3f5','--text-dim':'#8a8f98','--accent':'#4d8dff','--bg-settings':'#171d2b' };
+function applyTheme(){
+  const root = document.documentElement.style;
+  if(state.themeMode === 'light'){
+    Object.entries(LIGHT_VARS).forEach(([k,v])=>root.setProperty(k,v));
+    if(tg) tg.setHeaderColor('#ffffff');
+  } else if(state.themeMode === 'dark'){
+    Object.entries(DARK_VARS).forEach(([k,v])=>root.setProperty(k,v));
+    if(tg) tg.setHeaderColor('#1c1f26');
+  } else {
+    // auto: follow Telegram theme
+    if(tg){
+      try{
+        const tp = tg.themeParams || {};
+        if(tg.colorScheme === 'dark'){
+          Object.entries(DARK_VARS).forEach(([k,v])=>root.setProperty(k,v));
+          if(tp.bg_color) root.setProperty('--bg', tp.bg_color);
+          if(tp.section_bg_color) root.setProperty('--surface', tp.section_bg_color);
+          tg.setHeaderColor('#1c1f26');
+        } else {
+          Object.entries(LIGHT_VARS).forEach(([k,v])=>root.setProperty(k,v));
+          if(tp.bg_color) root.setProperty('--bg', tp.bg_color);
+          tg.setHeaderColor('#ffffff');
+        }
+        if(tp.button_color) root.setProperty('--accent', tp.button_color);
+      }catch(e){ Object.entries(LIGHT_VARS).forEach(([k,v])=>root.setProperty(k,v)); }
+    } else {
+      Object.entries(LIGHT_VARS).forEach(([k,v])=>root.setProperty(k,v));
+    }
   }
 }
 
@@ -274,19 +322,14 @@ const Store = {
     return new Promise((resolve)=>{
       if(tg && tg.CloudStorage){
         tg.CloudStorage.getItem(key, (err, value)=> resolve(err ? null : value));
-      } else {
-        resolve(localStorage.getItem(key));
-      }
+      } else { resolve(localStorage.getItem(key)); }
     });
   },
   set(key, value){
     return new Promise((resolve)=>{
       if(tg && tg.CloudStorage){
         tg.CloudStorage.setItem(key, value, ()=> resolve(true));
-      } else {
-        localStorage.setItem(key, value);
-        resolve(true);
-      }
+      } else { localStorage.setItem(key, value); resolve(true); }
     });
   }
 };
@@ -294,10 +337,13 @@ const Store = {
 // ---------- App ----------
 const CUR_SYMBOLS = { UAH:'₴', EUR:'€', USD:'$', BTC:'₿' };
 const CAT_ICONS = {
-  'Зарплата':'💼','Фріланс':'💻','Подарунок':'🎁',
-  'Продукти':'🛒','Транспорт':'🚌','Комунальні послуги':'🏠','Розваги':'🎉','Здоровʼя':'💊',
+  'Зарплата':'💼','Фріланс':'💻','Стипендія':'🎓','Кешбек':'💸','Подарунок':'🎁','Продаж речей':'🏷️',
+  'Продукти':'🛒','Кафе і ресторани':'☕','Алкоголь':'🍷','Транспорт':'🚌','Комунальні послуги':'🏠','Розваги':'🎉',
+  'Здоровʼя':'💊','Одяг':'👕','Підписки':'🔁','Освіта':'📚','Подарунки':'🎀','Спорт':'🏋️',
   'Інше':'📎'
 };
+const CATS_INCOME = ['Зарплата','Фріланс','Стипендія','Кешбек','Подарунок','Продаж речей','Інше'];
+const CATS_EXPENSE = ['Продукти','Кафе і ресторани','Алкоголь','Транспорт','Комунальні послуги','Розваги','Здоровʼя','Одяг','Підписки','Освіта','Подарунки','Спорт','Інше'];
 
 const fmtPlain = (n) => (Number(n)||0).toLocaleString('uk-UA', {minimumFractionDigits:0, maximumFractionDigits:2});
 const fmt = (n) => fmtPlain(n) + ' ₴';
@@ -308,38 +354,116 @@ const fmtCur = (n, cur) => {
 };
 const uid = () => Math.random().toString(36).slice(2,10);
 const todayStr = () => new Date().toISOString().slice(0,10);
+const parseNum = (v) => parseFloat(String(v||'').replace(',', '.'));
+const parseRate = (v) => parseFloat(String(v||'').replace(/[^\d.,]/g,'').replace(',', '.'));
 
 let state = {
   personal: [],
   savings: [],
+  savingsGoal: null,
+  recurring: [],
+  categoryLimits: {},
+  customCategories: { income: [], expense: [] },
   rates: { EUR: 50.9, USD: 44.5, BTC: 2780000 },
   displayCurrency: 'UAH',
   tab: 'personal',
-  formType: 'expense'
+  formType: 'expense',
+  editingId: null,
+  themeMode: 'auto',
+  comparePeriod: 'month'
 };
 
 function showToast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
-  setTimeout(()=>t.classList.remove('show'), 1500);
+  setTimeout(()=>t.classList.remove('show'), 1800);
+}
+
+function incomeCats(){ return CATS_INCOME.concat(state.customCategories.income.map(c=>c.name)); }
+function expenseCats(){ return CATS_EXPENSE.concat(state.customCategories.expense.map(c=>c.name)); }
+function iconFor(name){
+  if(CAT_ICONS[name]) return CAT_ICONS[name];
+  const found = state.customCategories.income.concat(state.customCategories.expense).find(c=>c.name===name);
+  return found ? (found.icon || '📎') : '📎';
+}
+function catOptions(type, selected){
+  const list = type==='income' ? incomeCats() : expenseCats();
+  return list.map(c=>`<option value="${c}" ${c===selected?'selected':''}>${iconFor(c)} ${c}</option>`).join('');
 }
 
 async function loadAll(){
   try{ const p = await Store.get('personal-transactions'); state.personal = p ? JSON.parse(p) : []; }catch(e){ state.personal = []; }
   try{ const s = await Store.get('savings-accounts'); state.savings = s ? JSON.parse(s) : []; }catch(e){ state.savings = []; }
+  try{ const g = await Store.get('savings-goal'); state.savingsGoal = g ? JSON.parse(g) : null; }catch(e){ state.savingsGoal = null; }
+  try{ const rc = await Store.get('recurring-payments'); state.recurring = rc ? JSON.parse(rc) : []; }catch(e){ state.recurring = []; }
+  try{ const cl = await Store.get('category-limits'); state.categoryLimits = cl ? JSON.parse(cl) : {}; }catch(e){ state.categoryLimits = {}; }
+  try{ const cc = await Store.get('custom-categories'); state.customCategories = cc ? JSON.parse(cc) : {income:[],expense:[]}; }catch(e){ state.customCategories = {income:[],expense:[]}; }
   try{ const r = await Store.get('exchange-rates'); if(r) state.rates = JSON.parse(r); }catch(e){}
+  try{ const t = await Store.get('rates-updated-at'); if(t) state.ratesUpdatedAt = t; }catch(e){}
+  try{ const tm = await Store.get('theme-mode'); if(tm) state.themeMode = tm; }catch(e){}
+
+  applyTheme();
+  await applyDueRecurring();
   render();
+
+  const staleMs = 6 * 60 * 60 * 1000;
+  const isStale = !state.ratesUpdatedAt || (Date.now() - new Date(state.ratesUpdatedAt).getTime()) > staleMs;
+  if(isStale){ fetchLiveRates().then((ok)=>{ if(ok && state.tab === 'settings') render(); }); }
 }
+
 async function savePersonal(){ await Store.set('personal-transactions', JSON.stringify(state.personal)); }
 async function saveSavings(){ await Store.set('savings-accounts', JSON.stringify(state.savings)); }
+async function saveGoal(){ await Store.set('savings-goal', state.savingsGoal ? JSON.stringify(state.savingsGoal) : ''); }
+async function saveRecurring(){ await Store.set('recurring-payments', JSON.stringify(state.recurring)); }
+async function saveLimits(){ await Store.set('category-limits', JSON.stringify(state.categoryLimits)); }
+async function saveCustomCats(){ await Store.set('custom-categories', JSON.stringify(state.customCategories)); }
 async function saveRates(){ await Store.set('exchange-rates', JSON.stringify(state.rates)); }
+async function saveThemeMode(){ await Store.set('theme-mode', state.themeMode); }
 
-const CATS_INCOME = ['Зарплата','Фріланс','Подарунок','Інше'];
-const CATS_EXPENSE = ['Продукти','Транспорт','Комунальні послуги','Розваги','Здоровʼя','Інше'];
-function catOptions(type){
-  return (type==='income'?CATS_INCOME:CATS_EXPENSE).map(c=>`<option value="${c}">${c}</option>`).join('');
+async function applyDueRecurring(){
+  if(!state.recurring.length) return;
+  const today = new Date();
+  const ym = today.toISOString().slice(0,7);
+  let added = [];
+  for(const r of state.recurring){
+    const already = state.personal.some(t => t.recurringId === r.id && t.date.startsWith(ym));
+    if(!already && today.getDate() >= r.day){
+      const dateForEntry = ym + '-' + String(r.day).padStart(2,'0');
+      const entry = { id: uid(), type: r.type, category: r.category, amount: r.amount, date: dateForEntry, note: r.note||'', recurringId: r.id };
+      state.personal.push(entry);
+      added.push(r);
+    }
+  }
+  if(added.length){
+    await savePersonal();
+    showToast(`Додано повторюваних платежів: ${added.length}`);
+  }
 }
+
+async function fetchLiveRates(){
+  let gotSomething = false;
+  try{
+    const resp = await fetch('https://api.monobank.ua/bank/currency');
+    const data = await resp.json();
+    const usd = data.find(x=>x.currencyCodeA===840 && x.currencyCodeB===980);
+    const eur = data.find(x=>x.currencyCodeA===978 && x.currencyCodeB===980);
+    if(usd){ state.rates.USD = Number((( (usd.rateBuy||usd.rateCross) + (usd.rateSell||usd.rateCross) )/2).toFixed(2)); gotSomething = true; }
+    if(eur){ state.rates.EUR = Number((( (eur.rateBuy||eur.rateCross) + (eur.rateSell||eur.rateCross) )/2).toFixed(2)); gotSomething = true; }
+  }catch(e){}
+  try{
+    const resp2 = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=uah');
+    const data2 = await resp2.json();
+    if(data2 && data2.bitcoin && data2.bitcoin.uah){ state.rates.BTC = Math.round(data2.bitcoin.uah); gotSomething = true; }
+  }catch(e){}
+  if(gotSomething){
+    state.ratesUpdatedAt = new Date().toISOString();
+    await saveRates();
+    await Store.set('rates-updated-at', state.ratesUpdatedAt);
+  }
+  return gotSomething;
+}
+
 function ledgerTotals(list){
   const inc = list.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
   const exp = list.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
@@ -353,18 +477,80 @@ function categoryBreakdown(list, type){
 function toUAH(amount, currency){ return currency === 'UAH' ? amount : amount * (state.rates[currency] || 0); }
 function fromUAH(amountUAH, currency){ if(currency==='UAH') return amountUAH; return amountUAH / (state.rates[currency] || 1); }
 
+function monthTotals(list, ym){
+  const items = list.filter(t=>t.date.startsWith(ym));
+  const inc = items.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp = items.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  return {inc, exp, bal: inc-exp};
+}
+function prevMonthYM(ym){
+  const [y,m] = ym.split('-').map(Number);
+  const d = new Date(y, m-2, 1);
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+}
+function sumForDays(list, days){
+  const items = list.filter(t=>days.includes(t.date));
+  const inc = items.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp = items.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  return { inc, exp, bal: inc-exp };
+}
+function periodTotals(list, mode){
+  if(mode === 'week'){
+    const today = new Date();
+    const curDays = []; for(let i=6;i>=0;i--){ const d=new Date(today); d.setDate(d.getDate()-i); curDays.push(d.toISOString().slice(0,10)); }
+    const prevDays = []; for(let i=13;i>=7;i--){ const d=new Date(today); d.setDate(d.getDate()-i); prevDays.push(d.toISOString().slice(0,10)); }
+    return { cur: sumForDays(list,curDays), prev: sumForDays(list,prevDays), curLabel:'Цей тиждень', prevLabel:'Минулий тиждень' };
+  }
+  const ym = new Date().toISOString().slice(0,7);
+  const pym = prevMonthYM(ym);
+  return { cur: monthTotals(list, ym), prev: monthTotals(list, pym), curLabel:'Цей місяць', prevLabel:'Минулий місяць' };
+}
+
+function buildBalanceChart(list){
+  const days = [];
+  for(let i=13;i>=0;i--){ const d = new Date(); d.setDate(d.getDate()-i); days.push(d.toISOString().slice(0,10)); }
+  const nets = days.map(day=>{
+    const dayTx = list.filter(t=>t.date===day);
+    const inc = dayTx.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+    const exp = dayTx.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+    return inc-exp;
+  });
+  const hasAny = nets.some(n=>n!==0);
+  if(!hasAny) return '<div class="empty">Ще немає даних для графіка.</div>';
+  const maxAbs = Math.max(1, ...nets.map(n=>Math.abs(n)));
+  const w = 340, h = 110, colW = w/days.length, baseline = h/2, maxBar = h/2 - 10;
+  const bars = nets.map((n,i)=>{
+    const barH = Math.max(Math.abs(n)/maxAbs * maxBar, n===0?0:2);
+    const x = i*colW + colW*0.22;
+    const bw = colW*0.56;
+    const y = n>=0 ? baseline - barH : baseline;
+    const color = n>=0 ? 'var(--positive)' : 'var(--negative)';
+    return `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${bw.toFixed(1)}" height="${barH.toFixed(1)}" rx="2" style="fill:${color}"></rect>`;
+  }).join('');
+  const svg = `<svg viewBox="0 0 ${w} ${h}" style="width:100%; height:110px; display:block;">
+    <line x1="0" y1="${baseline}" x2="${w}" y2="${baseline}" style="stroke:var(--border); stroke-width:1"/>
+    ${bars}
+  </svg>`;
+  const fmtShort = (d)=> d.toLocaleDateString('uk-UA', {day:'2-digit', month:'2-digit'});
+  const labels = `<div class="chart-labels"><span>${fmtShort(new Date(days[0]))}</span><span>сьогодні</span></div>`;
+  return svg + labels;
+}
+
 function renderLedgerList(list){
   if(!list.length) return '<div class="empty">Поки що немає записів.</div>';
   const sorted = [...list].sort((a,b)=> b.date.localeCompare(a.date));
   return '<ul class="ledger">' + sorted.map(t=>`
     <li>
-      <div class="icon-badge ${t.type}">${CAT_ICONS[t.category]||'📎'}</div>
+      <div class="icon-badge ${t.type}">${iconFor(t.category)}</div>
       <div class="lg-mid">
-        <div class="lg-cat">${t.category}</div>
+        <div class="lg-cat">${t.category}${t.recurringId ? ' 🔁' : ''}</div>
         <div class="lg-date">${t.date}${t.note ? ' · '+t.note : ''}</div>
       </div>
       <span class="lg-amt" style="color:${t.type==='income'?'var(--positive)':'var(--negative)'}">${t.type==='income'?'+':'−'}${fmt(t.amount)}</span>
-      <button class="lg-del" data-del="${t.id}">✕</button>
+      <div class="lg-actions">
+        <button class="lg-edit" data-edit="${t.id}">✎</button>
+        <button class="lg-del" data-del="${t.id}">✕</button>
+      </div>
     </li>
   `).join('') + '</ul>';
 }
@@ -374,8 +560,16 @@ function renderPersonal(){
   const {inc, exp} = ledgerTotals(list);
   const bal = inc - exp;
   const curType = state.formType;
-  const breakdown = categoryBreakdown(list, 'expense');
-  const maxCat = breakdown.length ? breakdown[0][1] : 1;
+  const editing = state.editingId ? state.personal.find(t=>t.id===state.editingId) : null;
+
+  const ym = new Date().toISOString().slice(0,7);
+  const pt = periodTotals(list, state.comparePeriod);
+  const deltaExp = pt.prev.exp ? ((pt.cur.exp - pt.prev.exp)/pt.prev.exp*100) : (pt.cur.exp>0?100:0);
+  const deltaClass = Math.abs(deltaExp) < 1 ? 'flat' : (deltaExp>0 ? 'up' : 'down');
+  const deltaArrow = deltaClass==='flat' ? '→' : (deltaClass==='up' ? '↑' : '↓');
+
+  const monthBreakdown = categoryBreakdown(list.filter(t=>t.date.startsWith(ym)), 'expense');
+  const maxCat = monthBreakdown.length ? monthBreakdown[0][1] : 1;
 
   return `
     <div class="balance-card">
@@ -388,30 +582,71 @@ function renderPersonal(){
     </div>
 
     <div class="card">
-      <h2>Новий запис</h2>
-      <form class="entry" id="form-personal">
+      <h2>Баланс за 14 днів</h2>
+      ${buildBalanceChart(list)}
+    </div>
+
+    <div class="card">
+      <h2>Порівняння витрат</h2>
+      <div class="seg" style="margin-bottom:12px;">
+        <button type="button" class="period-btn ${state.comparePeriod==='week'?'on':''}" data-period="week">Тиждень</button>
+        <button type="button" class="period-btn ${state.comparePeriod==='month'?'on':''}" data-period="month">Місяць</button>
+      </div>
+      <div class="month-compare">
+        <div class="month-col">
+          <div class="mc-label">${pt.prevLabel}</div>
+          <div class="mc-val" style="color:var(--negative)">${fmt(pt.prev.exp)}</div>
+        </div>
+        <div class="month-col">
+          <div class="mc-label">${pt.curLabel}</div>
+          <div class="mc-val" style="color:var(--negative)">${fmt(pt.cur.exp)}</div>
+        </div>
+      </div>
+      <div class="mc-delta ${deltaClass}">${deltaArrow} ${Math.abs(deltaExp).toFixed(0)}% ${deltaExp>=0?'більше витрат':'менше витрат'} ніж ${state.comparePeriod==='week'?'минулого тижня':'минулого місяця'}</div>
+    </div>
+
+    <div class="card">
+      <h2>${editing ? 'Редагувати запис' : 'Новий запис'}</h2>
+      <div class="entry" id="form-personal">
         <div class="seg full">
           <button type="button" class="type-btn ${curType==='income'?'on income':''}" data-type="income">Дохід</button>
           <button type="button" class="type-btn ${curType==='expense'?'on expense':''}" data-type="expense">Витрата</button>
         </div>
-        <select name="category">${catOptions(curType)}</select>
-        <input name="amount" type="number" inputmode="decimal" step="0.01" min="0" placeholder="Сума, ₴" required>
-        <input name="date" type="date" value="${todayStr()}">
-        <input name="note" type="text" placeholder="Нотатка (необовʼязково)" class="full">
-        <button type="submit" class="btn-add">Додати</button>
-      </form>
+        <select name="category">${catOptions(curType, editing?editing.category:undefined)}</select>
+        <input name="amount" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="Сума, ₴" value="${editing?editing.amount:''}">
+        ${editing ? '' : `<div class="preset-row">${[100,500,1000,2000].map(v=>`<button type="button" class="preset-btn" data-preset="${v}">+${v}</button>`).join('')}</div>`}
+        <input name="date" type="date" value="${editing?editing.date:todayStr()}">
+        <input name="note" type="text" autocomplete="off" placeholder="Нотатка (необовʼязково)" class="full" value="${editing?(editing.note||''):''}">
+        ${editing ? '' : `
+        <label class="check-row"><input type="checkbox" id="chk-recurring"> Повторювати щомісяця (з цього числа)</label>
+        `}
+        <div class="btn-row">
+          ${editing ? '<button type="button" class="btn-secondary" id="cancel-edit">Скасувати</button>' : ''}
+          <button type="button" class="btn-add" id="submit-personal">${editing ? 'Зберегти' : 'Додати'}</button>
+        </div>
+      </div>
     </div>
 
-    ${breakdown.length ? `
+    ${monthBreakdown.length ? `
     <div class="card">
-      <h2>Витрати за категоріями</h2>
+      <h2>Витрати за категоріями (цей місяць)</h2>
       <div class="cat-bars">
-        ${breakdown.map(([cat,amt])=>`
+        ${monthBreakdown.map(([cat,amt])=>{
+          const limit = state.categoryLimits[cat];
+          let cls = '';
+          let limitTxt = '';
+          if(limit){
+            if(amt >= limit) cls = 'over';
+            else if(amt >= limit*0.8) cls = 'warn';
+            limitTxt = ` / ${fmt(limit)}`;
+          }
+          const pct = limit ? Math.min(100, amt/limit*100) : (amt/maxCat*100);
+          return `
           <div class="cat-bar-row">
-            <div class="top-line"><span>${CAT_ICONS[cat]||''} ${cat}</span><span class="amt">${fmt(amt)}</span></div>
-            <div class="bar-track"><div class="bar-fill" style="width:${(amt/maxCat*100).toFixed(0)}%"></div></div>
-          </div>
-        `).join('')}
+            <div class="top-line"><span>${iconFor(cat)} ${cat}${cls==='over'?' ⚠️':''}</span><span class="amt">${fmt(amt)}${limitTxt}</span></div>
+            <div class="bar-track"><div class="bar-fill ${cls}" style="width:${pct.toFixed(0)}%"></div></div>
+          </div>`;
+        }).join('')}
       </div>
     </div>` : ''}
 
@@ -420,6 +655,39 @@ function renderPersonal(){
       ${renderLedgerList(list)}
     </div>
   `;
+}
+
+function renderGoalCard(){
+  const totalUAH = state.savings.reduce((s,a)=> s + toUAH(Number(a.amount||0), a.currency), 0);
+  if(!state.savingsGoal){
+    return `
+    <div class="card goal-card">
+      <h2>🎯 Ціль накопичень</h2>
+      <div class="entry" id="form-goal">
+        <input name="goalName" type="text" autocomplete="off" placeholder="Назва цілі (напр. Нова камера)" class="full">
+        <select name="goalCurrency">
+          <option value="UAH">₴ Гривня</option>
+          <option value="EUR">€ Євро</option>
+          <option value="USD">$ Долар</option>
+          <option value="BTC">₿ Bitcoin</option>
+        </select>
+        <input name="goalAmount" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="Сума цілі">
+        <button type="button" class="btn-add" id="submit-goal">Встановити ціль</button>
+      </div>
+    </div>`;
+  }
+  const g = state.savingsGoal;
+  const currentInGoalCur = fromUAH(totalUAH, g.currency);
+  const pct = Math.max(0, Math.min(100, (currentInGoalCur / g.amount) * 100));
+  return `
+    <div class="card goal-card">
+      <h2>🎯 Ціль накопичень</h2>
+      <div class="goal-name">${g.name || 'Без назви'}</div>
+      <div class="goal-sub">${fmtCur(currentInGoalCur, g.currency)} з ${fmtCur(g.amount, g.currency)}</div>
+      <div class="progress-track"><div class="progress-fill" style="width:${pct.toFixed(1)}%"></div></div>
+      <div class="goal-row"><span>Прогрес</span><span class="pct">${pct.toFixed(0)}%</span></div>
+      <button class="goal-edit-link" id="remove-goal">Прибрати ціль</button>
+    </div>`;
 }
 
 function renderSavings(){
@@ -437,19 +705,21 @@ function renderSavings(){
       </div>
     </div>
 
+    ${renderGoalCard()}
+
     <div class="card">
       <h2>Додати рахунок</h2>
-      <form class="entry" id="form-savings">
-        <input name="name" type="text" placeholder="Назва (Крипта, ФІНАМ, Депозит...)" class="full" required>
+      <div class="entry" id="form-savings">
+        <input name="name" type="text" autocomplete="off" placeholder="Назва (Крипта, ФІНАМ, Депозит...)" class="full">
         <select name="currency">
           <option value="UAH">₴ Гривня</option>
           <option value="EUR">€ Євро</option>
           <option value="USD">$ Долар</option>
           <option value="BTC">₿ Bitcoin</option>
         </select>
-        <input name="amount" type="number" inputmode="decimal" step="0.000001" placeholder="Сума в цій валюті" required>
-        <button type="submit" class="btn-add">Додати рахунок</button>
-      </form>
+        <input name="amount" type="text" inputmode="decimal" pattern="[0-9]*[.,]?[0-9]*" autocomplete="off" placeholder="Сума в цій валюті">
+        <button type="button" class="btn-add" id="submit-savings">Додати рахунок</button>
+      </div>
     </div>
 
     <div class="card">
@@ -466,32 +736,142 @@ function renderSavings(){
             <div class="acct-orig">${fmtCur(a.amount, a.currency)}</div>
             <div class="bar-track" style="margin-top:6px;"><div class="bar-fill" style="width:${(uah/maxUAH*100).toFixed(0)}%"></div></div>
           </div>
-          <div class="acct-right">
-            <div class="acct-bal">${fmtCur(disp, state.displayCurrency)}</div>
-          </div>
+          <div class="acct-right"><div class="acct-bal">${fmtCur(disp, state.displayCurrency)}</div></div>
           <button class="lg-del" data-del-acct="${a.id}">✕</button>
         </div>`;
       }).join('') : '<div class="empty">Ще немає рахунків.</div>'}
     </div>
+  `;
+}
+
+function renderSettings(){
+  return `
+    <div class="card">
+      <h2>Тема</h2>
+      <div class="seg full">
+        <button type="button" class="theme-btn ${state.themeMode==='auto'?'on':''}" data-theme="auto">Авто</button>
+        <button type="button" class="theme-btn ${state.themeMode==='light'?'on':''}" data-theme="light">Світла</button>
+        <button type="button" class="theme-btn ${state.themeMode==='dark'?'on':''}" data-theme="dark">Темна</button>
+      </div>
+    </div>
 
     <div class="card">
       <h2>Курси валют</h2>
-      <div class="hint">Онови вручну, коли потрібно — курс біткоїна особливо змінюється щодня.</div>
-      <div class="rates-grid">
-        <div><label>1 EUR = ? грн</label><input type="number" step="0.01" id="rate-EUR" value="${state.rates.EUR}"></div>
-        <div><label>1 USD = ? грн</label><input type="number" step="0.01" id="rate-USD" value="${state.rates.USD}"></div>
-        <div><label>1 BTC = ? грн</label><input type="number" step="1" id="rate-BTC" value="${state.rates.BTC}"></div>
+      <div class="hint">
+        Підтягуються автоматично (Монобанк + CoinGecko), можна поправити вручну.
+        ${state.ratesUpdatedAt ? `Оновлено: ${new Date(state.ratesUpdatedAt).toLocaleString('uk-UA', {day:'2-digit', month:'2-digit', hour:'2-digit', minute:'2-digit'})}` : ''}
       </div>
-      <button class="btn-secondary" id="save-rates" style="margin-top:10px;">Зберегти курси</button>
+      <div class="rates-grid">
+        <div><label>1 EUR = ? грн</label><input type="text" inputmode="decimal" autocomplete="off" id="rate-EUR" value="${fmtPlain(state.rates.EUR)}"></div>
+        <div><label>1 USD = ? грн</label><input type="text" inputmode="decimal" autocomplete="off" id="rate-USD" value="${fmtPlain(state.rates.USD)}"></div>
+        <div><label>1 BTC = ? грн</label><input type="text" inputmode="decimal" autocomplete="off" id="rate-BTC" value="${fmtPlain(state.rates.BTC)}"></div>
+      </div>
+      <div style="display:flex; gap:8px; margin-top:10px;">
+        <button class="btn-secondary" id="refresh-rates" style="flex:1;">↻ Оновити з інтернету</button>
+        <button class="btn-secondary" id="save-rates" style="flex:1;">Зберегти вручну</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>🔁 Повторювані платежі</h2>
+      <div class="hint">Додаються автоматично щомісяця, коли настає обране число (при відкритті застосунку).</div>
+      ${state.recurring.length ? state.recurring.map(r=>`
+        <div class="list-row">
+          <div>
+            <div class="lr-title">${iconFor(r.category)} ${r.category} — ${fmt(r.amount)}</div>
+            <div class="lr-sub">${r.type==='income'?'дохід':'витрата'} · щомісяця ${r.day} числа${r.note?' · '+r.note:''}</div>
+          </div>
+          <button class="lg-del" data-del-recurring="${r.id}">✕</button>
+        </div>
+      `).join('') : '<div class="empty">Ще немає повторюваних платежів. Постав галочку "Повторювати щомісяця" при додаванні запису в "Особистому".</div>'}
+    </div>
+
+    <div class="card">
+      <h2>📉 Ліміти по категоріях</h2>
+      <div class="hint">Місячний ліміт витрат — попереджає, коли наближаєшся чи перевищуєш. 0 або пусто = без ліміту.</div>
+      <div id="limits-list">
+        ${expenseCats().map(cat=>`
+          <div class="limit-row">
+            <div class="lr-cat">${iconFor(cat)} ${cat}</div>
+            <input type="text" inputmode="decimal" autocomplete="off" data-limit-cat="${cat}" value="${state.categoryLimits[cat]?fmtPlain(state.categoryLimits[cat]):''}" placeholder="—">
+          </div>
+        `).join('')}
+      </div>
+      <button class="btn-secondary" id="save-limits" style="margin-top:10px;">Зберегти ліміти</button>
+    </div>
+
+    <div class="card">
+      <h2>🗂 Свої категорії</h2>
+      <div class="entry" id="form-custom-cat">
+        <div class="seg full">
+          <button type="button" class="cctype-btn on expense" data-cctype="expense">Витрата</button>
+          <button type="button" class="cctype-btn" data-cctype="income">Дохід</button>
+        </div>
+        <input name="ccIcon" type="text" autocomplete="off" placeholder="Емодзі (необов.)" maxlength="4">
+        <input name="ccName" type="text" autocomplete="off" placeholder="Назва категорії" class="full">
+        <button type="button" class="btn-add" id="submit-custom-cat">Додати категорію</button>
+      </div>
+      ${(state.customCategories.income.length || state.customCategories.expense.length) ? `
+        <div style="margin-top:12px;">
+          ${state.customCategories.expense.map(c=>`
+            <div class="list-row"><div class="lr-title">${c.icon||'📎'} ${c.name} <span class="lr-sub">витрата</span></div>
+            <button class="lg-del" data-del-custom-cat="expense:${c.name}">✕</button></div>`).join('')}
+          ${state.customCategories.income.map(c=>`
+            <div class="list-row"><div class="lr-title">${c.icon||'📎'} ${c.name} <span class="lr-sub">дохід</span></div>
+            <button class="lg-del" data-del-custom-cat="income:${c.name}">✕</button></div>`).join('')}
+        </div>` : ''}
+    </div>
+
+    <div class="card">
+      <h2>📤 Експорт даних</h2>
+      <div class="hint">Файл CSV можна відкрити в Excel/Google Таблицях.</div>
+      <div class="btn-row">
+        <button class="btn-secondary" id="export-personal-csv">Записи (CSV)</button>
+        <button class="btn-secondary" id="export-savings-csv">Накопичення (CSV)</button>
+      </div>
     </div>
   `;
 }
 
+function updateHeader(){
+  const h1 = document.querySelector('header.top .titles h1');
+  const p = document.querySelector('header.top .titles p');
+  const btn = document.getElementById('settings-btn');
+  if(state.tab === 'settings'){
+    h1.textContent = 'Налаштування';
+    p.textContent = 'Тема, курси, ліміти, категорії, експорт';
+    btn.textContent = '←';
+    btn.title = 'Назад';
+    document.body.classList.add('settings-mode');
+  } else {
+    h1.textContent = 'Облік';
+    p.textContent = 'Особисті фінанси та накопичення';
+    btn.textContent = '⚙️';
+    btn.title = 'Налаштування';
+    document.body.classList.remove('settings-mode');
+  }
+}
+
 function render(){
+  updateHeader();
   document.querySelectorAll('nav.tabbar button').forEach(b=> b.classList.toggle('active', b.dataset.tab === state.tab));
+  const settingsBtn = document.getElementById('settings-btn');
+  if(settingsBtn) settingsBtn.classList.toggle('active', state.tab === 'settings');
   const view = document.getElementById('view');
-  view.innerHTML = state.tab === 'personal' ? renderPersonal() : renderSavings();
+  if(state.tab === 'personal') view.innerHTML = renderPersonal();
+  else if(state.tab === 'savings') view.innerHTML = renderSavings();
+  else view.innerHTML = renderSettings();
   attachHandlers();
+}
+
+function downloadCSV(filename, rows){
+  const csv = rows.map(r=>r.map(v=>`"${String(v).replace(/"/g,'""')}"`).join(',')).join('\r\n');
+  const blob = new Blob(['\ufeff'+csv], {type:'text/csv;charset=utf-8;'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(()=>URL.revokeObjectURL(url), 2000);
 }
 
 function attachHandlers(){
@@ -501,54 +881,226 @@ function attachHandlers(){
   document.querySelectorAll('.cur-btn').forEach(btn=>{
     btn.addEventListener('click', ()=>{ haptic('light'); state.displayCurrency = btn.dataset.cur; render(); });
   });
+  document.querySelectorAll('.period-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{ haptic('light'); state.comparePeriod = btn.dataset.period; render(); });
+  });
+  document.querySelectorAll('.theme-btn').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      haptic('light'); state.themeMode = btn.dataset.theme;
+      applyTheme(); await saveThemeMode(); render();
+    });
+  });
 
   const fp = document.getElementById('form-personal');
-  if(fp) fp.addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    const fd = new FormData(fp);
-    const entry = { id: uid(), type: state.formType, category: fd.get('category'), amount: parseFloat(fd.get('amount')), date: fd.get('date')||todayStr(), note: fd.get('note')||'' };
-    if(!entry.amount || entry.amount<=0) return;
+  const submitPersonal = document.getElementById('submit-personal');
+  if(submitPersonal) submitPersonal.addEventListener('click', async ()=>{
+    const category = fp.querySelector('[name="category"]').value;
+    const amount = parseNum(fp.querySelector('[name="amount"]').value);
+    const date = fp.querySelector('[name="date"]').value || todayStr();
+    const note = fp.querySelector('[name="note"]').value || '';
+    if(!amount || amount<=0){ haptic('light'); showToast('Введи суму'); return; }
+
+    if(state.editingId){
+      const idx = state.personal.findIndex(t=>t.id===state.editingId);
+      if(idx>-1){
+        state.personal[idx] = { ...state.personal[idx], type: state.formType, category, amount, date, note };
+      }
+      state.editingId = null;
+      await savePersonal();
+      haptic('success'); showToast('Зміни збережено'); render();
+      return;
+    }
+
+    const entry = { id: uid(), type: state.formType, category, amount, date, note };
     state.personal.push(entry);
+
+    const chkRec = document.getElementById('chk-recurring');
+    if(chkRec && chkRec.checked){
+      const day = new Date(date).getDate();
+      const rec = { id: uid(), type: state.formType, category, amount, note, day };
+      state.recurring.push(rec);
+      entry.recurringId = rec.id;
+      await saveRecurring();
+    }
+
     await savePersonal();
     haptic('success'); showToast('Запис додано'); render();
   });
 
+  const cancelEdit = document.getElementById('cancel-edit');
+  if(cancelEdit) cancelEdit.addEventListener('click', ()=>{ state.editingId = null; render(); });
+
+  document.querySelectorAll('.preset-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      haptic('light');
+      const amountInput = fp.querySelector('[name="amount"]');
+      const current = parseNum(amountInput.value) || 0;
+      amountInput.value = String(current + Number(btn.dataset.preset));
+    });
+  });
+
+  document.querySelectorAll('[data-edit]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      haptic('light');
+      state.editingId = btn.dataset.edit;
+      const entry = state.personal.find(t=>t.id===state.editingId);
+      if(entry) state.formType = entry.type;
+      render();
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+  });
+
   const fs = document.getElementById('form-savings');
-  if(fs) fs.addEventListener('submit', async (e)=>{
-    e.preventDefault();
-    const fd = new FormData(fs);
-    const acct = { id: uid(), name: fd.get('name'), currency: fd.get('currency'), amount: parseFloat(fd.get('amount')) };
-    if(!acct.name || isNaN(acct.amount)) return;
+  const submitSavings = document.getElementById('submit-savings');
+  if(submitSavings) submitSavings.addEventListener('click', async ()=>{
+    const name = fs.querySelector('[name="name"]').value.trim();
+    const currency = fs.querySelector('[name="currency"]').value;
+    const amount = parseNum(fs.querySelector('[name="amount"]').value);
+    if(!name || isNaN(amount)){ haptic('light'); showToast('Заповни назву і суму'); return; }
+    const acct = { id: uid(), name, currency, amount };
     state.savings.push(acct);
     await saveSavings();
     haptic('success'); showToast('Рахунок додано'); render();
   });
 
+  const fg = document.getElementById('form-goal');
+  const submitGoal = document.getElementById('submit-goal');
+  if(submitGoal) submitGoal.addEventListener('click', async ()=>{
+    const name = fg.querySelector('[name="goalName"]').value.trim();
+    const currency = fg.querySelector('[name="goalCurrency"]').value;
+    const amount = parseNum(fg.querySelector('[name="goalAmount"]').value);
+    if(!amount || amount<=0){ haptic('light'); showToast('Введи суму цілі'); return; }
+    state.savingsGoal = { name, currency, amount };
+    await saveGoal();
+    haptic('success'); showToast('Ціль встановлено'); render();
+  });
+
+  const removeGoalBtn = document.getElementById('remove-goal');
+  if(removeGoalBtn) removeGoalBtn.addEventListener('click', async ()=>{
+    const ok = await confirmAction('Прибрати ціль накопичень?');
+    if(!ok) return;
+    state.savingsGoal = null;
+    await saveGoal();
+    haptic('light'); render();
+  });
+
   const srb = document.getElementById('save-rates');
   if(srb) srb.addEventListener('click', async ()=>{
-    state.rates.EUR = parseFloat(document.getElementById('rate-EUR').value) || state.rates.EUR;
-    state.rates.USD = parseFloat(document.getElementById('rate-USD').value) || state.rates.USD;
-    state.rates.BTC = parseFloat(document.getElementById('rate-BTC').value) || state.rates.BTC;
+    state.rates.EUR = parseRate(document.getElementById('rate-EUR').value) || state.rates.EUR;
+    state.rates.USD = parseRate(document.getElementById('rate-USD').value) || state.rates.USD;
+    state.rates.BTC = parseRate(document.getElementById('rate-BTC').value) || state.rates.BTC;
     await saveRates();
     haptic('success'); showToast('Курси збережено'); render();
   });
 
+  const refreshBtn = document.getElementById('refresh-rates');
+  if(refreshBtn) refreshBtn.addEventListener('click', async ()=>{
+    refreshBtn.textContent = 'Оновлюю...';
+    await fetchLiveRates();
+    haptic('success'); showToast('Курси оновлено з інтернету'); render();
+  });
+
+  document.querySelectorAll('[data-del-recurring]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const ok = await confirmAction('Видалити повторюваний платіж?');
+      if(!ok) return;
+      state.recurring = state.recurring.filter(r=>r.id!==btn.dataset.delRecurring);
+      await saveRecurring(); haptic('success'); render();
+    });
+  });
+
+  const saveLimitsBtn = document.getElementById('save-limits');
+  if(saveLimitsBtn) saveLimitsBtn.addEventListener('click', async ()=>{
+    document.querySelectorAll('[data-limit-cat]').forEach(inp=>{
+      const cat = inp.dataset.limitCat;
+      const val = parseRate(inp.value);
+      if(val && val>0) state.categoryLimits[cat] = val;
+      else delete state.categoryLimits[cat];
+    });
+    await saveLimits();
+    haptic('success'); showToast('Ліміти збережено'); render();
+  });
+
+  let ccType = 'expense';
+  document.querySelectorAll('.cctype-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      ccType = btn.dataset.cctype;
+      document.querySelectorAll('.cctype-btn').forEach(b=>{
+        b.classList.toggle('on', b===btn);
+        b.classList.toggle('expense', b===btn && ccType==='expense');
+        b.classList.toggle('income', b===btn && ccType==='income');
+      });
+    });
+  });
+  const fcc = document.getElementById('form-custom-cat');
+  const submitCC = document.getElementById('submit-custom-cat');
+  if(submitCC) submitCC.addEventListener('click', async ()=>{
+    const name = fcc.querySelector('[name="ccName"]').value.trim();
+    const icon = fcc.querySelector('[name="ccIcon"]').value.trim();
+    if(!name){ haptic('light'); showToast('Введи назву категорії'); return; }
+    state.customCategories[ccType].push({ name, icon });
+    await saveCustomCats();
+    haptic('success'); showToast('Категорію додано'); render();
+  });
+  document.querySelectorAll('[data-del-custom-cat]').forEach(btn=>{
+    btn.addEventListener('click', async ()=>{
+      const [type, name] = btn.dataset.delCustomCat.split(':');
+      const ok = await confirmAction('Видалити категорію "'+name+'"?');
+      if(!ok) return;
+      state.customCategories[type] = state.customCategories[type].filter(c=>c.name!==name);
+      await saveCustomCats(); haptic('success'); render();
+    });
+  });
+
+  const expPersonal = document.getElementById('export-personal-csv');
+  if(expPersonal) expPersonal.addEventListener('click', ()=>{
+    const rows = [['Дата','Тип','Категорія','Сума (грн)','Нотатка']];
+    [...state.personal].sort((a,b)=>a.date.localeCompare(b.date)).forEach(t=>{
+      rows.push([t.date, t.type==='income'?'Дохід':'Витрата', t.category, t.amount, t.note||'']);
+    });
+    downloadCSV('oblik-osobyste.csv', rows);
+    haptic('success');
+  });
+  const expSavings = document.getElementById('export-savings-csv');
+  if(expSavings) expSavings.addEventListener('click', ()=>{
+    const rows = [['Назва','Валюта','Сума','Сума в грн']];
+    state.savings.forEach(a=>{
+      rows.push([a.name, a.currency, a.amount, toUAH(Number(a.amount||0), a.currency).toFixed(2)]);
+    });
+    downloadCSV('oblik-nakopychennya.csv', rows);
+    haptic('success');
+  });
+
   document.querySelectorAll('[data-del]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
+      const ok = await confirmAction('Видалити цей запис?');
+      if(!ok) return;
       state.personal = state.personal.filter(t=>t.id!==btn.dataset.del);
-      await savePersonal(); haptic('light'); render();
+      await savePersonal(); haptic('success'); render();
     });
   });
   document.querySelectorAll('[data-del-acct]').forEach(btn=>{
     btn.addEventListener('click', async ()=>{
+      const ok = await confirmAction('Видалити цей рахунок?');
+      if(!ok) return;
       state.savings = state.savings.filter(a=>a.id!==btn.dataset.delAcct);
-      await saveSavings(); haptic('light'); render();
+      await saveSavings(); haptic('success'); render();
     });
   });
 }
 
 document.querySelectorAll('nav.tabbar button').forEach(b=>{
   b.addEventListener('click', ()=>{ haptic('light'); state.tab = b.dataset.tab; render(); });
+});
+document.getElementById('settings-btn').addEventListener('click', ()=>{
+  haptic('light');
+  if(state.tab === 'settings'){
+    state.tab = state.prevTab || 'personal';
+  } else {
+    state.prevTab = state.tab;
+    state.tab = 'settings';
+  }
+  render();
 });
 
 loadAll();
