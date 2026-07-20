@@ -57,20 +57,20 @@ node tests/logic.test.mjs
 
 ### Роадмап
 
-**v0.x — зараз** ✅
+**v0.02 — зараз** ✅
 Особисте + накопичення + налаштування, все на CloudStorage, без бекенду.
 
-**v0.5 — зручність вводу**
+**v0.05 — зручність вводу**
 - [ ] Свої категорії: перейменування вбудованих (не тільки додавання нових)
 - [ ] Пошук і фільтр записів (за категорією, датою, сумою)
 - [ ] Прикріплення фото чека до запису
 
-**v0.6 — аналітика**
+**v0.06 — аналітика**
 - [ ] Графік по місяцях (не тільки 14 днів)
 - [ ] Порівняння категорій між періодами, а не тільки загальних витрат
 - [ ] Прогноз накопичень при поточному темпі
 
-**v1.0 — бекенд (Python)**
+**v0.1 — бекенд (Python)**
 - [ ] Бот сам нагадує ввечері записати витрати
 - [ ] Тижневі/місячні звіти прямо в чат
 - [ ] Швидкий запис текстом у чат боту ("продукти 450") без відкриття застосунку
@@ -133,13 +133,13 @@ browser, no dependencies. UI flows are checked manually against
 
 ### Roadmap
 
-**v0.x — now** ✅ Personal + savings + settings, CloudStorage only, no backend.
+**v0.02 — now** ✅ Personal + savings + settings, CloudStorage only, no backend.
 
-**v0.5 — input UX**: rename built-in categories, search/filter entries, attach receipt photos.
+**v0.05 — input UX**: rename built-in categories, search/filter entries, attach receipt photos.
 
-**v0.6 — analytics**: monthly charts, per-category period comparison, savings forecast.
+**v0.06 — analytics**: monthly charts, per-category period comparison, savings forecast.
 
-**v1.0 — Python backend**: evening reminders, weekly/monthly reports in chat, quick text logging ("groceries 450"), unlimited exchange-rate automation, a real database instead of CloudStorage.
+**v0.1 — Python backend**: evening reminders, weekly/monthly reports in chat, quick text logging ("groceries 450"), unlimited exchange-rate automation, a real database instead of CloudStorage.
 
 **Later / maybe**: shared access (family/partner), a standalone web dashboard, bank statement integration (security tradeoffs, not a priority yet).
 
